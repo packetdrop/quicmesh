@@ -35,7 +35,10 @@ func (s *Server) SetHandler(handler Handler) {
 
 // StartServer starts the server and listens for incoming connections
 func (s *Server) StartServer(ctx context.Context, connections map[string]quic.Connection, wg *sync.WaitGroup) error {
-	listener, err := quic.ListenAddr(s.addr, getTLSConfig(), &quic.Config{
+	// Split the host and port in s.addr
+	_, port, _ := net.SplitHostPort(s.addr)
+
+	listener, err := quic.ListenAddr(fmt.Sprintf(":%s", port), getTLSConfig(), &quic.Config{
 		KeepAlivePeriod: 10,
 		EnableDatagrams: true,
 	})
@@ -46,7 +49,7 @@ func (s *Server) StartServer(ctx context.Context, connections map[string]quic.Co
 	wg.Done()
 
 	for {
-		conn, err := listener.Accept(ctx)
+		conn, _ := listener.Accept(ctx)
 		s.logger.Infof("Accepted connection from %v and local address is %v", conn.RemoteAddr(), conn.LocalAddr())
 		//split host and port
 		host, _, err := net.SplitHostPort(conn.RemoteAddr().String())
